@@ -1,0 +1,193 @@
+---
+title: "Software-Applikation LilonCheckerm"
+output: html_notebook
+---
+
+#verwendete packages
+```{r}
+library(grDevices) 
+library(grid)  
+library(ggplot2) 
+library(png)  
+library(R.utils) 
+```
+
+#Aufforderung zur Eingabe des Identifiers für Akku DUT-ID abfragen
+```{r}
+get_dut_id <- function() {
+  dut_id <- readline(prompt = "Bitte DUT-ID eingeben: ")
+  if (nchar(dut_id) == 0) {
+    stop("DUT-ID darf nicht leer sein.")
+  }
+  return(dut_id)
+}
+get_dut_id()
+```
+
+#Lesen der Messdaten über serielle Schnittstelle vorbereiten
+```{r}
+serial_port <- setRefClass("VirtualSerial",
+  fields = list(buffer = "character"),
+  methods = list(
+    initialize = function() {
+      buffer <<- ""
+    },
+    write = function(data) {
+      buffer <<- paste(buffer, data, sep = "\n")
+    },
+    readline = function() {
+      if (nzchar(buffer)) {
+        line <- buffer
+        buffer <<- ""
+        return(line)
+      }
+      return("")
+    }
+  )
+)
+serial_port
+```
+
+# Prüfe ob Testdaten vorhanden
+```{r}
+start_test_environment <- function(dut_id, serial_port) {
+  tryCatch({
+    serial_port$write(paste0(dut_id, "\n"))
+    response <- system2(command = "Rscript", args = c("testdata.R", dut_id), stdout = TRUE, stderr = TRUE)
+    serial_port$write(paste0(response, "\n"))
+    print(paste("Antwort von testdata.R:", response))
+    if (grepl("does not exist", response)) {
+      stop(response)
+    }
+  }, error = function(e) {
+    print(paste("Fehler bei der virtuellen seriellen Kommunikation:", e$message))
+    stop(e)
+  })
+}
+```
+
+# Lesen der Schnittstelle
+```{r}
+read_serial_data <- function(serial_port) {
+  data <- character()
+  tryCatch({
+    while (TRUE) {
+      line <- serial_port$readline()
+      if (nchar(line) > 0) {
+        data <- c(data, line)
+      } else {
+        break
+      }
+    }
+  }, error = function(e) {
+    print(paste("Fehler beim Lesen der seriellen Daten:", e$message))
+  })
+  return(data)
+}
+read_serial_data()
+```
+#Spannung und Strom prüfen
+```{r}
+check_measurements <- function(data) {
+  voltage_range <- c(8.0, 10)  # Spannungsbereich
+  current_range <- c(100, 150)  # Strombereich
+
+  report <- character()
+  voltages <- numeric()
+  currents <- numeric()
+
+  for (line in data) {
+    values <- as.numeric(strsplit(line, " ")[[1]])
+    if (length(values) == 2) {
+      voltage <- values[1]
+      current <- values[2]
+      voltages <- c(voltages, voltage)
+      currents <- c(currents, current)
+      if (!(voltage_range[1] <= voltage && voltage <= voltage_range[2])) {
+        report <- c(report, paste("Spannung außerhalb des Bereichs:", voltage))
+      }
+      if (!(current_range[1] <= current && current <= current_range[2])) {
+        report <- c(report, paste("Strom außerhalb des Bereichs:", current))
+      }
+    } else {
+      report <- c(report, paste("Ungültige Datenzeile:", line))
+    }
+  }
+
+  return(list(report = report, voltages = voltages, currents = currents))
+}
+
+```
+
+#erstellen des Berichts
+```{r}
+create_report_pdf <- function(dut_id, report_data, voltages, currents, capacity_min, capacity_actual,
+                              voltage_threshold, voltage_actual, current_threshold, current_actual,
+                              max_voltage_threshold, max_voltage_actual, min_voltage_threshold, min_voltage_actual,
+                              additional_notes = NULL) {
+  # Verzeichnis für Protokolle erstellen, falls nicht vorhanden
+  REPORTS_DIR <- "Protokolle"
+  if (!dir.exists(REPORTS_DIR)) {
+    dir.create(REPORTS_DIR)
+  }
+
+  # Aktuellen Zeitstempel hinzufügen
+  timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
+
+  # Erstellen des PDFs im Protokolle-Verzeichnis mit aktuellem Zeitstempel im Dateinamen
+  report_path <- file.path(REPORTS_DIR, paste0(dut_id, "_Pruefprotokoll_", timestamp, ".pdf"))
+  pdf(report_path, paper = "A4")
+
+  # Titel und DUT ID hinzufügen
+  plot.new()
+  title(main = paste("Prüfprotokoll für DUT-ID:", dut_id), cex.main = 1.5, font.main = 2)
+
+  # Entladekurve speichern
+  temp_file <- tempfile(fileext = ".png")
+  ggplot(data.frame(x = seq_along(voltages), voltage = voltages, current = currents), aes(x = x)) +
+    geom_line(aes(y = voltage, color = "Spannung (V)")) +
+    geom_line(aes(y = current, color = "Strom (A)")) +
+    labs(x = "Sekunden", y = "Wert", title = paste("Entladekurve für", dut_id)) +
+    theme_minimal() +
+    theme(legend.position = "top") +
+    ggsave(temp_file)
+
+  # Entladekurve zum PDF hinzufügen
+  grid.raster(readPNG(temp_file), x = 0.5, y = 0.5, width = unit(0.8, "npc"), height = unit(0.4, "npc"))
+
+  # Testergebnisse hinzufügen
+  grid.text("Testergebnisse:", x = 0.1, y = 0.9, just = "left", gp = gpar(fontsize = 12, fontface = "bold"))
+  
+  # Zusätzliche Hinweise hinzufügen, falls vorhanden
+  if (!is.null(additional_notes)) {
+    grid.text("Zusätzliche Hinweise:", x = 0.1, y = 0.85, just = "left", gp = gpar(fontsize = 12))
+    y_position <- 0.82
+    for (note in additional_notes) {
+      grid.text(note, x = 0.1, y = y_position, just = "left", gp = gpar(fontsize = 12))
+      y_position <- y_position - 0.03
+    }
+  }
+
+  # Testergebnisse hinzufügen
+  test_results <- list(
+    paste("Mindestkapazität:", capacity_min, "mAh, Ist-Kapazität:", capacity_actual, "mAh") = ifelse(capacity_actual >= capacity_min, "Bestanden", "Nicht bestanden"),
+    paste("Grenzwert Leerlaufspannung:", voltage_threshold, "V, Ist-Wert:", voltage_actual, "V") = ifelse(voltage_actual >= voltage_threshold, "Bestanden", "Nicht bestanden"),
+    paste("Grenzwert Leerlaufstrom:", current_threshold, "A, Ist-Wert:", current_actual, "A") = ifelse(current_actual <= current_threshold, "Bestanden", "Nicht bestanden"),
+    paste("Maximale Entladespannung:", max_voltage_threshold, "V, Ist-Wert:", max_voltage_actual, "V") = ifelse(max_voltage_actual <= max_voltage_threshold, "Bestanden", "Nicht bestanden"),
+    paste("Minimale Entladespannung:", min_voltage_threshold, "V, Ist-Wert:", min_voltage_actual, "V") = ifelse(min_voltage_actual >= min_voltage_threshold, "Bestanden", "Nicht bestanden")
+  )
+
+  y_position <- 0.75
+  for (result in names(test_results)) {
+    grid.text(result, x = 0.1, y = y_position, just = "left", gp = gpar(fontsize = 12))
+    grid.text(test_results[[result]], x = 0.9, y = y_position, just = "right", gp = gpar(fontsize = 12))
+    y_position <- y_position - 0.03
+  }
+
+  dev.off()
+
+  print(paste("Prüfprotokoll gespeichert unter:", report_path))
+}
+
+```
+
