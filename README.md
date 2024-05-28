@@ -5,7 +5,7 @@
 Tasks can be self-assigned using shortened names: AS, JS, MM.
 
 - Write software application
-    - [ ] Create template for report
+    - [ ] Create template for report - *MM*
         - [ ] Short summary of test phase (check ER Prüfgerät LiIonCheck9V125mA )
         - [ ] Discharge curve (e.g. similar to image 7 in ER-LiIonCheck9V125mA )
         - [ ] Capacity: minimum - actual pass/fail
