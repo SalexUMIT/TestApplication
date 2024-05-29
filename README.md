@@ -19,7 +19,7 @@ Tasks can be self-assigned using shortened names: AS, JS, MM.
         - [ ] input arguments
         - [ ] file accessibility
         - [ ] input file type and content (rough estimation)
-    - [ ] Parameter testing
+    - [ ] Parameter testing - *AS*
         - [ ] Voltage
         - [ ] Current
         - [ ] Capacity
@@ -29,7 +29,7 @@ Tasks can be self-assigned using shortened names: AS, JS, MM.
     - Needs to be separate application? 
     - Connect Arduino with R [possible guide](https://rstudio-pubs-static.s3.amazonaws.com/727970_e305535f79e04e958bfd0dfe444b40d1.html)
     - Consider possible failures not covered in testdata. How can it be improved
-- Documentation of software application (Engineering Report)
+- Documentation of software application (Engineering Report) - *JS*
     - [ ] Purpose 
     - [ ] Requirements
     - [ ] Implementation 
