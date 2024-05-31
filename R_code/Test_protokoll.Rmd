@@ -84,6 +84,32 @@ p
 
 ## Pruefung der Testdaten
 
+```{r, data-testing, include=TRUE, echo = FALSE}
+
+# Grenzwerte festlegen
+voltage_min <- 5.8
+voltage_max <- 10
+current_min <- 0.1
+current_max <- 0.15
+capacity_limit <- 0.5  # Kapazität in Ah
+
+# Kapazität berechnen
+time_diff <- diff(data$Time)
+current_avg <- (head(data$Current, -1) + tail(data$Current, -1)) / 2
+actual_capacity <- sum(time_diff * current_avg) / 3600
+
+# Grenzwerte überprüfen
+voltage_pass <- all(data$Voltage >= voltage_min & data$Voltage <= voltage_max)
+current_pass <- all(data$Current >= current_min & data$Current <= current_max)
+capacity_pass <- actual_capacity >= capacity_limit
+
+# Farbkodierung für Konsole (nur auf unterstützten Plattformen)
+green <- function(text) paste0("\033[32m", text, "\033[39m")
+red <- function(text) paste0("\033[31m", text, "\033[39m")
+
+
+```
+
 | **Beschreibung**                          | **Kriterium** |
 | :---------------------------------------- | :------------ | 
 | IST-Kapazität, mit SOLL-Wert verglichen|  pass             |
