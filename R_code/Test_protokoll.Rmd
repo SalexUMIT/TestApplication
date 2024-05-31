@@ -86,10 +86,11 @@ p
 
 | **Beschreibung**                          | **Kriterium** |
 | :---------------------------------------- | :------------ | 
-| IST-Spannung wird mit SOLL-Wert verglichen|  pass             |
-| IST-Stromstärke wird mit SOLL-Stromstärke |  pass             |
-| Der IST-Maximalwert der Kapazität wird mit dem SOLL-Maximalwert der Kapazität verglichen|  pass              |
-
+| IST-Kapazität, mit SOLL-Wert verglichen|  pass             |
+| IST-Spannung mit SOLL-Wert verglichen|  pass             |
+| IST-Stromstärke mit SOLL-Stromstärke |  pass             |
+| Der IST-Maximalwert der Kapazität mit dem SOLL-Wert verglichen|  pass              |
+| Der IST-Minimalwert der Kapazität mit dem SOLL-Wert verglichen|  pass              |
 
 ## Plausibilität der Daten
 
