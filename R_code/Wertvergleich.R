@@ -4,14 +4,23 @@ rm(list=ls())
 data <- read.csv("Data/BatADevA20220318.txt", header = TRUE, sep = " ")
 colnames(data) <- c("Voltage", "Current")
 
+#create time variable
+#assuming one observation per 8 seconds, makes 1800 obs have a runtime of 4 hours
+library(dplyr)
+data <- data %>% 
+    mutate(
+        time_sec = 8,
+        time_sec_cum = cumsum(time_sec),
+        time_hour = time_sec_cum/3600
+    )
 
 # Notwendige Bibliotheken laden
 library(ggplot2)
 
 # Daten einlesen
-file_path <- "test_data.txt"  # Pfad zur Daten-Datei
-data <- read.csv(file_path, header = TRUE, sep = " ")
-colnames(data) <- c("Time", "Voltage", "Current")
+#file_path <- "test_data.txt"  # Pfad zur Daten-Datei
+#data <- read.csv(file_path, header = TRUE, sep = " ")
+#colnames(data) <- c("Time", "Voltage", "Current")
 
 # Grenzwerte festlegen
 voltage_min <- 5.8
@@ -47,7 +56,7 @@ cat(sprintf("Stromgrenzen: %.1f A bis %.1f A\n", current_min, current_max))
 cat(sprintf("Strom: %s\n", ifelse(current_pass, green("Pass"), red("Fail"))))
 cat("\n")
 
-p <- ggplot(Testdata, aes(x = Time)) +
+p <- ggplot(data, aes(x = time_hour)) +
   geom_line(aes(y = Voltage, color = "Voltage (V)")) +
   geom_line(aes(y = Current * 10, color = "Current (A)")) +  # Strom-Werte skalieren, um sie sichtbar zu machen
   scale_y_continuous(
@@ -63,6 +72,6 @@ p <- ggplot(Testdata, aes(x = Time)) +
     legend.position = "bottom",
     legend.title = element_blank()
   )
-
+p
 # Plot anzeigen
 print(p)
