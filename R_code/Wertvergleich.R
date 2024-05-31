@@ -1,9 +1,9 @@
 rm(list=ls())
 
-data <- read.csv("C:/Users/PC/Desktop/Modul11/BatDat4eTivityD/BatDat/BatADevA20220318.txt", header = TRUE, sep = " ")
+#data <- read.csv("C:/Users/PC/Desktop/Modul11/BatDat4eTivityD/BatDat/BatADevA20220318.txt", header = TRUE, sep = " ")
+data <- read.csv("Data/BatADevA20220318.txt", header = TRUE, sep = " ")
 colnames(data) <- c("Voltage", "Current")
 
- 
 
 # Notwendige Bibliotheken laden
 library(ggplot2)
