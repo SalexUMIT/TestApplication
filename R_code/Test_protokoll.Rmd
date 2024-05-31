@@ -1,0 +1,110 @@
+---
+author: "R group"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output: pdf_document
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_dir = "../Test_report"
+    )
+  })
+---
+
+
+```{r, data-prep, include=TRUE, echo = FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+
+#needs following packages
+
+#title is set dynamically therefore define below 
+#for pdf generation needs a LaTeX distribution, install with tinytex::install_tinytex(), dont have to install tinytext normally
+
+document_title = "Testprotokoll fuer "
+filename = "BatADevA20220318.txt"
+
+data <- read.csv(paste0("../Data/",filename), header = TRUE, sep = " ")
+colnames(data) <- c("Voltage", "Current")
+
+#create time variable
+#assuming one observation per 8 seconds, makes 1800 obs have a runtime of 4 hours
+library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
+data <- data %>% 
+    mutate(
+        time_sec = 8,
+        time_sec_cum = cumsum(time_sec),
+        time_hour = time_sec_cum/3600
+    )
+
+```
+---
+title: "`r paste0(document_title, filename)`"
+geometry: margin = 0.1in
+---
+
+
+
+# Testinformation
+
+- Batterietyp: `r stringr::str_sub(filename,1,4)`
+- Entwickler: `r stringr::str_sub(filename,5,8)`
+- Testdatum: `r format(as.Date(stringr::str_sub(filename,9,16),"%Y%m%d"),"%d.%m.%Y")`
+
+# Entladekurve
+
+```{r, data-plot, include=TRUE, echo = FALSE}
+
+library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
+
+p <- ggplot(data, aes(x = time_hour)) +
+  geom_line(aes(y = Voltage, color = "Voltage (V)")) +
+  geom_line(aes(y = Current / 17.8571, color = "Current (A)")) +  # Strom-Werte skalieren, um sie sichtbar zu machen
+  scale_y_continuous(
+    name = "Voltage (V)",
+    breaks = seq(5.5, 8.5, 0.5),
+    limits = c(5.5,8.5),
+    expand = c(0.001,0),
+    sec.axis = sec_axis(~. , name = "Current (A)", breaks = seq(5.5, 8.5, 0.3), labels = seq(120,130,1))  # Skalierung der Strom-Werte zurücksetzen
+  ) +
+  scale_x_continuous(name = "Time (h)", breaks = seq(0,4,0.5), expand = c(0.001,0)) +
+  scale_color_manual(values = c("Voltage (V)" = "blue", "Current (A)" = "red")) +
+  guides(color = guide_legend(reverse=TRUE)) +
+  #labs(title = "Entladekurve") +
+  theme_bw() +
+  theme(
+    axis.title.y.left = element_text(color = "blue"),
+    axis.title.y.right = element_text(color = "red"),
+    legend.position = "bottom",
+    legend.title = element_blank()
+  )
+p
+
+```
+
+# Testparameter
+
+## Pruefung der Testdaten
+
+| **Beschreibung**                          | **Kriterium** |
+| :---------------------------------------- | :------------ | 
+| IST-Spannung wird mit SOLL-Wert verglichen|  pass             |
+| IST-Stromstärke wird mit SOLL-Stromstärke |  pass             |
+| Der IST-Maximalwert der Kapazität wird mit dem SOLL-Maximalwert der Kapazität verglichen|  pass              |
+
+
+## Plausibilität der Daten
+
+Hier werden mögliche unplausible Werte angezeigt. Wenn leer, sind keine unplausiblen Werte gefunden.
+
+- Voltage: 
+- Current: 
+
+# Unterschrift
+
+- Name:         ________________________________________________________
+
+- Datum:        ________________________________________________________
+
+- Unterschrift: ________________________________________________________
+
+
+
