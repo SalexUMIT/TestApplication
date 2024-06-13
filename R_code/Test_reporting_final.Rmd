@@ -97,7 +97,7 @@ p
 #1 capcity is the what the battery delivers on average per hour
 #getting total capacity, will try to capture incomplete tests
 hours <- max(data$time_hour)
-if(hours > 0){
+if(hours >= 1 ){
     capacity = 0
     for (i in 1:hours) {
         #at first hour, then take first measurement
@@ -137,11 +137,11 @@ cur_values <- cur_values[cur_values < 120 | cur_values > 130]
 
 | **Beschreibung**                          | **Kriterium** |
 | :---------------------------------------- | :------------ | 
-| IST-Kapazität, mit SOLL-Wert verglichen|  `r print(capacity_pass)`             |
-| IST-Spannung mit SOLL-Wert verglichen|  `r print(voltage_pass)`             |
-| IST-Stromstärke mit SOLL-Stromstärke |  `r print(current_pass)`             |
-| Der IST-Maximalwert der Kapazität mit dem SOLL-Wert verglichen|  `r print(max_discharge_pass)`              |
-| Der IST-Minimalwert der Kapazität mit dem SOLL-Wert verglichen|  `r print(min_discharge_pass)`              |
+| IST-Kapazität, mit SOLL-Wert verglichen|  `r capacity_pass`             |
+| IST-Spannung mit SOLL-Wert verglichen|  `r voltage_pass`             |
+| IST-Stromstärke mit SOLL-Stromstärke |  `r current_pass`             |
+| Der IST-Maximalwert der Kapazität mit dem SOLL-Wert verglichen|  `r max_discharge_pass`              |
+| Der IST-Minimalwert der Kapazität mit dem SOLL-Wert verglichen|  `r min_discharge_pass`              |
 
 ## Plausibilität der Daten
 

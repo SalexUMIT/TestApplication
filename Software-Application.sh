@@ -23,7 +23,7 @@ process_file() {
     local VERBOSE=$2
     local PROJECT_ROOT=$(pwd)
     local INPUT_FILE="$PROJECT_ROOT/Data/$INPUT_FILENAME"
-    local RMD_FILE="$PROJECT_ROOT/R_code/Modul11_new.Rmd"
+    local RMD_FILE="$PROJECT_ROOT/R_code/Test_reporting_final.Rmd"
     local OUTPUT_DIR="$PROJECT_ROOT/Test_report"
     
     # Check if the input file exists
