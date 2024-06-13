@@ -96,13 +96,17 @@ p
 
 #1 capcity is the what the battery delivers on average per hour
 #getting total capacity, will try to capture incomplete tests
-hours <- max(data$time_hour)
+hours <- round(max(data$time_hour))
 if(hours >= 1 ){
     capacity = 0
     for (i in 1:hours) {
         #at first hour, then take first measurement
         if(i == 1){
             capacity <- capacity + (data[data$time_hour == min(data$time_hour), "Current"] + data[data$time_hour == 1, "Current"])/2
+        } else if(i == 4){
+        #at last hour take last value, even if it isnt perfect 4 hour measurements
+            j = i - 1
+            capacity <- capacity + (data[data$time_hour == j, "Current"] + data[nrow(data), "Current"])/2
         } else {
         #otherwise use the measurement at the hour
             j = i - 1
