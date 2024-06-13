@@ -57,7 +57,7 @@ geometry: margin = 0.1in
 
 # Testinformation
 
-Batterietyp: `r stringr::str_sub(filename,1,4)`, Entwickler: `r stringr::str_sub(filename,5,8)`, Testdatum: `r format(as.Date(stringr::str_sub(filename,9,16),"%Y%m%d"),"%d.%m.%Y")`
+Batterietyp: `r stringr::str_sub(filename,1,4)`, Entwickler: `r stringr::str_sub(filename,5,8)`, Testdatum: `r format(as.Date(stringr::str_sub(filename,9,16),"%Y%m%d"),"%d.%m.%Y")`, Laufzeit: `r round(max(data$time_hour),2)` Stunden
 
 Figure 1: Entladekurve
 ```{r, data-plot, include=TRUE, echo = FALSE, fig.height=4, fig.align='center',warning=FALSE,message=FALSE}
@@ -74,7 +74,7 @@ p <- ggplot(data, aes(x = time_hour)) +
     expand = c(0.001,0),
     sec.axis = sec_axis(~. , name = "Current (A)", breaks = seq(5.5, 8.5, 0.3), labels = seq(120,130,1))  # Skalierung der Strom-Werte zurücksetzen
   ) +
-  scale_x_continuous(name = "Time (h)", breaks = seq(0,4,0.5), expand = c(0.001,0)) +
+  scale_x_continuous(name = "Time (h)", breaks = seq(0,4,0.5), expand = c(0.001,0), limits = c(0,4)) +
   scale_color_manual(values = c("Voltage (V)" = "blue", "Current (A)" = "red")) +
   guides(color = guide_legend(reverse=TRUE)) +
   #labs(title = "Entladekurve") +
@@ -94,44 +94,61 @@ p
 
 ```{r, data-testing, include=TRUE, echo = FALSE,warning=FALSE,message=FALSE}
 
-# Grenzwerte festlegen
-voltage_min <- 5.8
-voltage_max <- 10
-current_min <- 0.1
-current_max <- 0.15
-capacity_limit <- 0.5  # Kapazität in Ah
+#1 capcity is the what the battery delivers on average per hour
+#getting total capacity, will try to capture incomplete tests
+hours <- max(data$time_hour)
+if(hours > 0){
+    capacity = 0
+    for (i in 1:hours) {
+        #at first hour, then take first measurement
+        if(i == 1){
+            capacity <- capacity + (data[data$time_hour == min(data$time_hour), "Current"] + data[data$time_hour == 1, "Current"])/2
+        } else {
+        #otherwise use the measurement at the hour
+            j = i - 1
+            capacity <- capacity + (data[data$time_hour == j, "Current"] + data[data$time_hour == i, "Current"])/2
+        }
+    }
+} else {
+    capacity = 0
+}
+capacity_pass <- ifelse(capacity == 500, "PASS", "FAIL")
 
-# Kapazität berechnen
-time_diff <- diff(data$Time)
-current_avg <- (head(data$Current, -1) + tail(data$Current, -1)) / 2
-actual_capacity <- sum(time_diff * current_avg) / 3600
+#2 voltage limit values
+voltage_pass <- ifelse(min(data$Voltage) >= 5.8 & max(data$Voltage) <= 10, "PASS", "FAIL")
 
-# Grenzwerte überprüfen
-voltage_pass <- all(data$Voltage >= voltage_min & data$Voltage <= voltage_max)
-current_pass <- all(data$Current >= current_min & data$Current <= current_max)
-capacity_pass <- actual_capacity >= capacity_limit
+#3 current limit values
+current_pass <- ifelse(min(data$Current) >= 100 & max(data$Current) <= 150, "PASS", "FAIL")
 
-# Farbkodierung für Konsole (nur auf unterstützten Plattformen)
-green <- function(text) paste0("\033[32m", text, "\033[39m")
-red <- function(text) paste0("\033[31m", text, "\033[39m")
+#4 maximum starting discharge voltage
+max_discharge_pass <- ifelse(data[1,"Voltage"] >= 8, "PASS","FAIL")
 
+#5 minimal ending discharge voltage
+min_discharge_pass <- ifelse(data[nrow(data),"Voltage"] >= 5.8, "PASS","FAIL")
+
+#find inplausible values
+vol_values = unique(data$Voltage)
+vol_values <- vol_values[vol_values < 5.5 | vol_values > 8.5 ]
+
+cur_values = unique(data$Current)
+cur_values <- cur_values[cur_values < 120 | cur_values > 130]
 
 ```
 
 | **Beschreibung**                          | **Kriterium** |
 | :---------------------------------------- | :------------ | 
-| IST-Kapazität, mit SOLL-Wert verglichen|  pass             |
-| IST-Spannung mit SOLL-Wert verglichen|  pass             |
-| IST-Stromstärke mit SOLL-Stromstärke |  pass             |
-| Der IST-Maximalwert der Kapazität mit dem SOLL-Wert verglichen|  pass              |
-| Der IST-Minimalwert der Kapazität mit dem SOLL-Wert verglichen|  pass              |
+| IST-Kapazität, mit SOLL-Wert verglichen|  `r print(capacity_pass)`             |
+| IST-Spannung mit SOLL-Wert verglichen|  `r print(voltage_pass)`             |
+| IST-Stromstärke mit SOLL-Stromstärke |  `r print(current_pass)`             |
+| Der IST-Maximalwert der Kapazität mit dem SOLL-Wert verglichen|  `r print(max_discharge_pass)`              |
+| Der IST-Minimalwert der Kapazität mit dem SOLL-Wert verglichen|  `r print(min_discharge_pass)`              |
 
 ## Plausibilität der Daten
 
 Hier werden mögliche unplausible Werte angezeigt. Wenn leer, sind keine unplausiblen Werte gefunden.
 
-- Voltage: 
-- Current: 
+- Voltage (5.5 - 8.5): `r ifelse(length(vol_values) > 0,vol_values,"keine unplausiblen Werte gefunden")`
+- Current (120 - 130): `r ifelse(length(cur_values) > 0,cur_values,"keine unplausiblen Werte gefunden")`
 
 # Unterschrift
 

@@ -49,12 +49,12 @@ process_file() {
     # Construct the output file name
     local BASENAME=$(basename "$INPUT_FILE" .txt)
     local DATE=$(date +%Y-%m-%d)
-    local OUTPUT_FILE="${OUTPUT_DIR}/Test_Protokoll_${BASENAME}_${DATE}.pdf"
-    local OUTPUT_FILE2="/Test_report/Test_Protokoll_${BASENAME}.pdf"
+    local OUTPUT_FILE="${OUTPUT_DIR}/Test_Protokoll_${BASENAME}.pdf"
+ 
     #[ "$VERBOSE" == "true" ] && echo "Output file will be: $OUTPUT_FILE"
     
-    if [ -f "$OUTPUT_FILE2" ]; then
-        echo "Output file already exists: $OUTPUT_FILE2"
+    if [ -f "$OUTPUT_FILE" ]; then
+        echo "Output file already exists: $OUTPUT_FILE"
         return 2
     fi
     
@@ -65,9 +65,9 @@ process_file() {
     # Run the RMarkdown render command with the input file as a parameter
     if [ "$VERBOSE" == "true" ]; then
         echo "Running rmarkdown::render..."
-        Rscript -e "rmarkdown::render('R_code/Modul11_new.Rmd', params=list(input_file='$INPUT_FILENAME'), output_file=paste0('../Test_report/Test_Protokoll_', '$BASENAME','.pdf'))"
+        Rscript -e "rmarkdown::render('R_code/Test_reporting_final.Rmd', params=list(input_file='$INPUT_FILENAME'), output_file=paste0('../Test_report/Test_Protokoll_', '$BASENAME','.pdf'))"
     else
-        Rscript -e "rmarkdown::render('R_code/Modul11_new.Rmd', params=list(input_file='$INPUT_FILENAME'), output_file=paste0('../Test_report/Test_Protokoll_', '$BASENAME','.pdf'))" &> /dev/null
+        Rscript -e "rmarkdown::render('R_code/Test_reporting_final.Rmd', params=list(input_file='$INPUT_FILENAME'), output_file=paste0('../Test_report/Test_Protokoll_', '$BASENAME','.pdf'))" &> /dev/null
     fi
     # Check if the output file was created
     echo "Report created /Test_report/Test_Protokoll_${BASENAME}.pdf"

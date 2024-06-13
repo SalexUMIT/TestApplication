@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-Archiv/.
-R_code/old/.
+Archiv/*
+R_code/old/*
