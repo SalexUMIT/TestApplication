@@ -29,7 +29,7 @@ process_file() {
     # Check if the input file exists
     if [ ! -f "$INPUT_FILE" ]; then
         [ "$VERBOSE" == "true" ] && echo "Input file does not exist: $INPUT_FILE"
-        return
+        return 1
     else
         [ "$VERBOSE" == "true" ] && echo "Input file exists: $INPUT_FILE"
     fi
@@ -37,7 +37,7 @@ process_file() {
     # Check if the RMarkdown file exists
     if [ ! -f "$RMD_FILE" ]; then
         [ "$VERBOSE" == "true" ] && echo "RMarkdown file does not exist: $RMD_FILE"
-        return
+        return 1
     else
         [ "$VERBOSE" == "true" ] && echo "RMarkdown file exists: $RMD_FILE"
     fi
@@ -69,8 +69,17 @@ process_file() {
     else
         Rscript -e "rmarkdown::render('R_code/Test_reporting_final.Rmd', params=list(input_file='$INPUT_FILENAME'), output_file=paste0('../Test_report/Test_Protokoll_', '$BASENAME','.pdf'))" &> /dev/null
     fi
+    
     # Check if the output file was created
-    echo "Report created /Test_report/Test_Protokoll_${BASENAME}.pdf"
+    # if [ -f "$OUTPUT_FILE" ]; then
+    #     [ "$VERBOSE" == "true" ] && echo "Report successfully created: /Test_report/Test_Protokoll_${BASENAME}.pdf"
+    #     return 0
+    # else
+    #     [ "$VERBOSE" == "true" ] && echo "Report was not created. Please check for errors."
+    #     return 1
+    # fi
+    
+    #echo "Report created /Test_report/Test_Protokoll_${BASENAME}.pdf"
 }
 
 # Check requirements
@@ -88,7 +97,7 @@ fi
 # Loop to process multiple files
 while true; do
     # Prompt the user for an input file
-    echo "Please enter the input file name located in the Data folder:"
+    echo "Please enter the input file name located in the Data folder, add true to enter into the test environent:"
     read INPUT_FILENAME VERBOSE
     
     # Prompt the user for an input file and verbose option
@@ -102,6 +111,7 @@ while true; do
     process_file "$INPUT_FILENAME" "$VERBOSE"
     RETVAL=$?
     
+    #check if file already exists
     if [ $RETVAL -eq 2 ]; then
         echo "Output file already exists. Please provide a different input file."
         continue
